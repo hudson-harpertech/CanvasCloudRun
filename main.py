@@ -15,7 +15,7 @@ if __name__ == "__main__":
         logger = logging_client.logger("canvas_logger")
 
         storage_client = google.cloud.storage.Client()
-        bucket = storage_client.get_bucket("canvas_sync_bucket")
+        bucket = storage_client.get_bucket(os.enviorn['BUCKET_NAME'])
 
         bigquery_client = google.cloud.bigquery.Client()
 
