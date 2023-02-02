@@ -55,9 +55,9 @@ if __name__ == "__main__":
 
         for table_name in schema:
             try:
-                table_id = f"dtsdatastore.CanvasDataFlatFiles.{table_name}"
+                table_id = f"{os.enviorn['PROJECT_NAME']}.{os.environ['TABLE_NAME']}.{table_name}"
                 job_config = google.cloud.bigquery.LoadJobConfig(source_format=google.cloud.bigquery.SourceFormat.CSV, autodetect=True)
-                uri = f"gs://canvas_sync_bucket/{table_name}.csv"
+                uri = f"gs://{os.environ['BUCKET_NAME']}/{table_name}.csv"
                 
                 load_job = bigquery_client.load_table_from_uri(uri, table_id, job_config=job_config)
                 load_job.result()  # Waits for the job to complete.
