@@ -1,17 +1,67 @@
 import google.cloud.logging
+import google.cloud.bigquery
 import google.cloud.storage
+
 import os
+
+import pandas as pd
+
 from canvas_data.api import CanvasDataAPI
 
 if __name__ == "__main__":
-    API_KEY = "e5c6e94761aa92955248d6979d068ca63860bc79"
-    API_SECRET = "0d7bb1b2e494278b6bcfb38f31a7e3da8eff80a1"
-    cd = CanvasDataAPI(api_key=API_KEY, api_secret=API_SECRET)
+    logging_client = google.cloud.logging.Client()
+    logging_client.setup_logging()
+    logger = logging_client.logger("canvas_logger")
 
+    storage_client = google.cloud.storage.Client()
+    bucket = storage_client.get_bucket("canvas_sync_bucket")
 
-    # logging_client = google.cloud.logging.Client()
-    # logging_client.setup_logging()
+    bigquery_client = google.cloud.bigquery.Client()
 
-    # logger = logging_client.logger("canvas_logger")
+    logger.log_text("Beginning Canvas Bigquery Sync", severity="ALERT")
 
-    # logger.log_text("Hello, world!", severity="INFO")
+    cd = CanvasDataAPI(api_key=os.environ['API_KEY'], api_secret=os.environ['API_SECRET'])
+
+    schema = cd.get_schema('latest', key_on_tablenames=True)
+    try:
+        for table_name in schema:
+            local_data_filename = cd.get_data_for_table(table_name=table_name)
+        
+        logger.log_text("Canvas Data Dumped", severity="INFO")
+    except Exception as e:
+        logger.log_text(f"Canvas Data Dump Failed: {e}", severity="ERROR")
+
+    logger.log_text("Converting files to csv", severity="INFO")
+    
+    for table_name in schema:
+        try:
+            df = pd.read_csv(f"data/{table_name}.txt", sep="\t")
+            df.to_csv(f"csvs/{table_name}.csv", index=False)
+        except Exception as e:
+            logger.log_text(f"File Conversion Failed: {e}", severity="ERROR")
+
+    logger.log_text("Adding CSV files to Cloud Storage", severity="INFO")
+
+    for table_name in schema:
+        try:
+            bucket.blob(f"{table_name}.csv").upload_from_filename(f"csvs/{table_name}.csv")
+        except Exception as e:
+            logger.log_text(f"Cloud Storage Upload Failed: {e}", severity="ERROR")
+
+    logger.log_text("Loading CSV files to Bigquery", severity="INFO")
+
+    for table_name in schema:
+        try:
+            table_id = f"dtsdatastore.CanvasDataFlatFiles.{table_name}"
+            job_config = google.cloud.bigquery.LoadJobConfig(source_format=google.cloud.bigquery.SourceFormat.CSV, autodetect=True)
+            uri = f"gs://canvas_sync_bucket/{table_name}.csv"
+            
+            load_job = bigquery_client.load_table_from_uri(uri, table_id, job_config=job_config)
+            load_job.result()  # Waits for the job to complete.
+
+            destination_table = bigquery_client.get_table(table_id)  # Make an API request.
+            logger.log_text("Loaded {} rows.".format(destination_table.num_rows), severity="INFO")
+        except Exception as e:
+            logger.log_text(f"Bigquery Load Job Failed: {e}", severity="ERROR")
+
+    logger.log_text("Finished Canvas Data Sync", severity="INFO")

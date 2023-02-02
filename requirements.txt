@@ -1,3 +1,5 @@
 google-cloud-logging
+google-cloud-bigquery
 google-cloud-storage
 canvas-data-sdk
+pandas
