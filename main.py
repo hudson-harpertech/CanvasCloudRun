@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
         for table_name in schema:
             try:
-                table_id = f"{os.enviorn['PROJECT_NAME']}.{os.environ['TABLE_NAME']}.{table_name}"
+                table_id = f"{os.environ['PROJECT_NAME']}.{os.environ['TABLE_NAME']}.{table_name}"
                 job_config = google.cloud.bigquery.LoadJobConfig(source_format=google.cloud.bigquery.SourceFormat.CSV, autodetect=True)
                 uri = f"gs://{os.environ['BUCKET_NAME']}/{table_name}.csv"
                 
