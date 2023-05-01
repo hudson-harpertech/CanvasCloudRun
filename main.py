@@ -1,4 +1,4 @@
-import google.cloud.logging
+# import google.cloud.logging
 import google.cloud.bigquery
 import google.cloud.storage
 
@@ -26,6 +26,9 @@ type_conversion_map = {
 
 def app():
     try:
+        #logging_client = google.cloud.logging.Client()
+        #logging_client.setup_logging()
+        #logger = logging_client.logger("canvas_logger")
         logging_client = google.cloud.logging.Client()
         logging_client.setup_logging()
         logging.basicConfig(level=logging.INFO)
@@ -37,6 +40,8 @@ def app():
 
         bigquery_client = google.cloud.bigquery.Client()
 
+        #logger.log_text("Beginning Canvas Bigquery Sync", severity="ALERT")
+        logging.info("Beginning Canvas Bigquery Sync")
         #logger.log_text("Beginning Canvas Bigquery Sync", severity="ALERT")
         logging.info("Beginning Canvas Bigquery Sync")
 
@@ -106,6 +111,8 @@ def app():
             #logger.log_text(f"Canvas Data Dump Failed: {e}", severity="ERROR")
             logging.error(f"Canvas Data Dump Failed: {e}")
 
+        #logger.log_text("Canvas Bigquery Sync Complete", severity="ALERT")
+        logging.info("Canvas Bigquery Sync Complete")
         #logger.log_text("Canvas Bigquery Sync Complete", severity="ALERT")
         logging.info("Canvas Bigquery Sync Complete")
     except Exception as e:
