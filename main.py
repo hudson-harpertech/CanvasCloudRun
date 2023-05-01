@@ -1,4 +1,4 @@
-# import google.cloud.logging
+import google.cloud.logging
 import google.cloud.bigquery
 import google.cloud.storage
 
@@ -26,8 +26,10 @@ type_conversion_map = {
 
 def app():
     try:
-        #logging_client = google.cloud.logging.Client()
-        #logging_client.setup_logging()
+        logging_client = google.cloud.logging.Client()
+        logging_client.setup_logging()
+        logging.basicConfig(level=logging.INFO)
+
         #logger = logging_client.logger("canvas_logger")
 
         storage_client = google.cloud.storage.Client()
@@ -44,18 +46,19 @@ def app():
         schema = cd.get_schema('latest', key_on_tablenames=True)
         try:
             for table_name in sorted(schema):
-                if table_name != "requests":
+                if table_name != "requests" and 'catalog' not in table_name:
                     try:
                         local_data_filename = cd.get_data_for_table(table_name=table_name)
 
                         with open(f"data/{table_name}.txt", "r") as f:
                             data = f.read()
                             data = data.replace("\\N", "")
+                            data = data.replace("\"", "")
                         
                         with open(f"data/{table_name}.txt", "w") as f:
                             f.write(data)
 
-                        df = pd.read_csv(f"data/{table_name}.txt", sep="\t")
+                        df = pd.read_csv(f"data/{table_name}.txt", sep="\t", low_memory=False)
                         table_columns = schema[table_name]['columns']
                         df.columns = [column["name"] for column in table_columns]
                         df.to_csv(f"csvs/{table_name}.csv", index=False)
