@@ -29,8 +29,8 @@ def app():
         #logging_client = google.cloud.logging.Client()
         #logging_client.setup_logging()
         #logger = logging_client.logger("canvas_logger")
-        logging_client = google.cloud.logging.Client()
-        logging_client.setup_logging()
+        #logging_client = google.cloud.logging.Client()
+        #logging_client.setup_logging()
         logging.basicConfig(level=logging.INFO)
 
         #logger = logging_client.logger("canvas_logger")
